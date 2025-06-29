@@ -1,18 +1,25 @@
 
-async function connectWallet() {
-  if (window.tronWeb && tronWeb.defaultAddress.base58) {
-    document.getElementById("walletAddress").value = tronWeb.defaultAddress.base58;
-    getTransactions(tronWeb.defaultAddress.base58);
+function waitForTronWeb(callback) {
+  if (window.tronWeb && window.tronWeb.defaultAddress.base58) {
+    callback(window.tronWeb.defaultAddress.base58);
   } else {
-    alert("Please open in TrustWallet or TronLink DApp Browser.");
+    setTimeout(() => waitForTronWeb(callback), 500);
   }
+}
+
+function connectWallet() {
+  waitForTronWeb((address) => {
+    document.getElementById("walletAddress").value = address;
+    getTransactions(address);
+  });
 }
 
 async function getTransactions(address) {
   const url = `https://apilist.tronscan.org/api/token_trc20/transfers?limit=10&start=0&sort=-timestamp&count=true&filterTokenValue=USDT&toAddress=${address}`;
   try {
-    const res = await axios.get(url);
-    const txs = res.data.data;
+    const response = await fetch(url);
+    const data = await response.json();
+    const txs = data.data;
     const table = document.getElementById("txTableBody");
     table.innerHTML = "";
     txs.forEach(tx => {
